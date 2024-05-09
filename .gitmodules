@@ -1,0 +1,6 @@
+[submodule "custom_nodes/ComfyUI-layerdiffuse"]
+	path = custom_nodes/ComfyUI-layerdiffuse
+	url = https://github.com/huchenlei/ComfyUI-layerdiffuse
+[submodule "custom_nodes/ComfyUI_essentials"]
+	path = custom_nodes/ComfyUI_essentials
+	url = https://github.com/cubiq/ComfyUI_essentials
