@@ -4,3 +4,9 @@
 [submodule "custom_nodes/ComfyUI_essentials"]
 	path = custom_nodes/ComfyUI_essentials
 	url = https://github.com/cubiq/ComfyUI_essentials
+[submodule "custom_nodes/PuLID_ComfyUI"]
+	path = custom_nodes/PuLID_ComfyUI
+	url = https://github.com/cubiq/PuLID_ComfyUI.git
+[submodule "custom_nodes/SeargeSDXL"]
+	path = custom_nodes/SeargeSDXL
+	url = https://github.com/SeargeDP/SeargeSDXL.git
