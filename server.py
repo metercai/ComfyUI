@@ -636,8 +636,8 @@ class PromptServer():
         await site.start()
 
         if verbose:
-            logging.info("Starting server\n")
-            logging.info("To see the GUI go to: {}://{}:{}".format(scheme, address, port))
+            logging.info("Starting Comfyd server\n")
+            #logging.info("To see the GUI go to: {}://{}:{}".format(scheme, address, port))
         if call_on_start is not None:
             call_on_start(scheme, address, port)
 
