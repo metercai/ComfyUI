@@ -15,6 +15,6 @@ venv/
 !/web/extensions/core/
 /tests-ui/data/object_info.json
 /user/
-/comfy_version.py
+comfy_version.py
 *.log
 web_custom_versions/
