@@ -17,3 +17,4 @@ venv/
 /user/
 /comfy_version.py
 *.log
+web_custom_versions/
