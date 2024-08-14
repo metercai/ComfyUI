@@ -1988,7 +1988,7 @@ def init_external_custom_nodes():
             node_import_times.append((time.perf_counter() - time_before, module_path, success))
 
     if len(node_import_times) > 0:
-        logging.info("\nImport times for custom nodes:")
+        logging.info("Import times for custom nodes:")
         for n in sorted(node_import_times):
             if n[2]:
                 import_message = ""

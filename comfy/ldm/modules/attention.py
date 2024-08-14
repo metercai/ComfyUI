@@ -351,6 +351,7 @@ def attention_xformers(q, k, v, heads, mask=None, attn_precision=None, skip_resh
 
     if BROKEN_XFORMERS:
         if b * heads > 65535:
+            print(f'BROKEN_XFORMERS:b={b}, heads{heads}, {b*heads}')
             disabled_xformers = True
 
     if not disabled_xformers:
@@ -414,10 +415,10 @@ def attention_pytorch(q, k, v, heads, mask=None, attn_precision=None, skip_resha
 optimized_attention = attention_basic
 
 if model_management.xformers_enabled():
-    logging.info("Using xformers cross attention")
+    #logging.info("Using xformers cross attention")
     optimized_attention = attention_xformers
 elif model_management.pytorch_attention_enabled():
-    logging.info("Using pytorch cross attention")
+    #logging.info("Using pytorch cross attention")
     optimized_attention = attention_pytorch
 else:
     if args.use_split_cross_attention:

@@ -1,7 +1,14 @@
+import os
+import sys
+root = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(root)
+#os.chdir(root)
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 import comfy.options
 comfy.options.enable_args_parsing()
 
-import os
 import importlib.util
 import folder_paths
 import time
@@ -39,17 +46,16 @@ def execute_prestartup_script():
                 success = execute_script(script_path)
                 node_prestartup_times.append((time.perf_counter() - time_before, module_path, success))
     if len(node_prestartup_times) > 0:
-        print("\nPrestartup times for custom nodes:")
+        #print("\nPrestartup times for custom nodes:")
         for n in sorted(node_prestartup_times):
             if n[2]:
                 import_message = ""
             else:
                 import_message = " (PRESTARTUP FAILED)"
             print("{:6.1f} seconds{}:".format(n[0], import_message), n[1])
-        print()
+        #print()
 
-execute_prestartup_script()
-
+#execute_prestartup_script()
 
 # Main code
 import asyncio
@@ -163,7 +169,7 @@ def hijack_progress(server):
     def hook(value, total, preview_image):
         comfy.model_management.throw_exception_if_processing_interrupted()
         progress = {"value": value, "max": total, "prompt_id": server.last_prompt_id, "node": server.last_node_id}
-
+        
         server.send_sync("progress", progress, server.client_id)
         if preview_image is not None:
             server.send_sync(BinaryEventTypes.UNENCODED_PREVIEW_IMAGE, preview_image, server.client_id)
@@ -183,6 +189,10 @@ def load_extra_path_config(yaml_path):
         conf = config[c]
         if conf is None:
             continue
+        models_root = None
+        if 'models_root' in conf:
+            models_root = conf.pop("models_root")
+            folder_paths.reset_folder_names_and_paths(models_root)
         base_path = None
         if "base_path" in conf:
             base_path = conf.pop("base_path")
@@ -193,7 +203,7 @@ def load_extra_path_config(yaml_path):
                 full_path = y
                 if base_path is not None:
                     full_path = os.path.join(base_path, full_path)
-                logging.info("Adding extra search path {} {}".format(x, full_path))
+                #logging.info("Adding extra search path {} {}".format(x, full_path))
                 folder_paths.add_model_folder_path(x, full_path)
 
 
@@ -219,11 +229,12 @@ if __name__ == "__main__":
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
     if os.path.isfile(extra_model_paths_config_path):
         load_extra_path_config(extra_model_paths_config_path)
-
+    
     if args.extra_model_paths_config:
         for config_path in itertools.chain(*args.extra_model_paths_config):
             load_extra_path_config(config_path)
 
+    execute_prestartup_script()
     nodes.init_extra_nodes(init_custom_nodes=not args.disable_all_custom_nodes)
 
     cuda_malloc_warning()

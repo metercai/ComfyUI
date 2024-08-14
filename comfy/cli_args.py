@@ -177,4 +177,4 @@ logging_level = logging.INFO
 if args.verbose:
     logging_level = logging.DEBUG
 
-logging.basicConfig(format="%(message)s", level=logging_level)
+logging.basicConfig(format="[Comfyd] %(message)s", level=logging_level)

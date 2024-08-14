@@ -127,7 +127,7 @@ class PromptServer():
 
         @routes.get("/")
         async def get_root(request):
-            response = web.FileResponse(os.path.join(self.web_root, "index.html"))
+            response = web.FileResponse(os.path.join(os.path.dirname(os.path.realpath(__file__)), "index.html"))
             response.headers['Cache-Control'] = 'no-cache'
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
@@ -681,8 +681,8 @@ class PromptServer():
         await site.start()
 
         if verbose:
-            logging.info("Starting server\n")
-            logging.info("To see the GUI go to: {}://{}:{}".format(scheme, address, port))
+            logging.info(f'Starting Comfyd server!\n')
+            #logging.info("To see the GUI go to: {}://{}:{}".format(scheme, address, port))
         if call_on_start is not None:
             call_on_start(scheme, address, port)
 
