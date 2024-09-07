@@ -20,7 +20,7 @@ def setup_logger(verbose: bool = False, capacity: int = 300):
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(logging.Formatter("%(message)s"))
+    stream_handler.setFormatter(logging.Formatter("[Comfyd] %(message)s"))
     logger.addHandler(stream_handler)
 
     # Create a memory handler with a deque as its buffer
