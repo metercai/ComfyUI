@@ -222,6 +222,15 @@ class PromptServer():
             response.headers["Expires"] = "0"
             return response
 
+        @routes.post("/setvars")
+        async def set_variable(request):
+            json_data =  await request.json()
+            logging.info(f"got variable: {json_data}")
+            if "outputs" in json_data:
+                folder_paths.set_output_directory(json_data['outputs'])
+            return web.json_response({'feedback': 'ok'})
+
+
         @routes.get("/embeddings")
         def get_embeddings(self):
             embeddings = folder_paths.get_filename_list("embeddings")
