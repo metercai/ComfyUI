@@ -145,6 +145,9 @@ import server
 from server import BinaryEventTypes
 import nodes
 import comfy.model_management
+import comfyui_version
+import app.logger
+
 
 def cuda_malloc_warning():
     device = comfy.model_management.get_torch_device()
@@ -230,7 +233,10 @@ def hijack_progress(server_instance):
 
         server_instance.send_sync("progress", progress, server_instance.client_id)
         if preview_image is not None:
-            server_instance.send_sync(BinaryEventTypes.UNENCODED_PREVIEW_IMAGE, preview_image, server_instance.client_id)
+            if isinstance(preview_image, tuple) and len(preview_image) >= 2 and preview_image[0] in ["WEBM", "MP4"]:
+                server_instance.send_sync(BinaryEventTypes.PREVIEW_VIDEO, preview_image, server_instance.client_id)
+            else:
+                server_instance.send_sync(BinaryEventTypes.UNENCODED_PREVIEW_IMAGE, preview_image, server_instance.client_id)
 
     comfy.utils.set_progress_bar_global_hook(hook)
 
@@ -265,7 +271,6 @@ def start_comfyui(asyncio_loop=None):
     prompt_server = server.PromptServer(asyncio_loop)
     q = execution.PromptQueue(prompt_server)
 
-    execute_prestartup_script()
     nodes.init_extra_nodes(init_custom_nodes=not args.disable_all_custom_nodes)
 
     cuda_malloc_warning()
@@ -274,28 +279,6 @@ def start_comfyui(asyncio_loop=None):
     hijack_progress(prompt_server)
 
     threading.Thread(target=prompt_worker, daemon=True, args=(q, prompt_server,)).start()
-
-    if args.output_directory:
-        output_dir = os.path.abspath(args.output_directory)
-        logging.info(f"Setting output directory to: {output_dir}")
-        folder_paths.set_output_directory(output_dir)
-
-    #These are the default folders that checkpoints, clip and vae models will be saved to when using CheckpointSave, etc.. nodes
-    folder_paths.add_model_folder_path("checkpoints", os.path.join(folder_paths.get_output_directory(), "checkpoints"))
-    folder_paths.add_model_folder_path("clip", os.path.join(folder_paths.get_output_directory(), "clip"))
-    folder_paths.add_model_folder_path("vae", os.path.join(folder_paths.get_output_directory(), "vae"))
-    folder_paths.add_model_folder_path("diffusion_models", os.path.join(folder_paths.get_output_directory(), "diffusion_models"))
-    folder_paths.add_model_folder_path("loras", os.path.join(folder_paths.get_output_directory(), "loras"))
-
-    if args.input_directory:
-        input_dir = os.path.abspath(args.input_directory)
-        logging.info(f"Setting input directory to: {input_dir}")
-        folder_paths.set_input_directory(input_dir)
-
-    if args.user_directory:
-        user_dir = os.path.abspath(args.user_directory)
-        logging.info(f"Setting user directory to: {user_dir}")
-        folder_paths.set_user_directory(user_dir)
 
     if args.quick_test_for_ci:
         exit(0)
@@ -322,9 +305,13 @@ def start_comfyui(asyncio_loop=None):
 
 if __name__ == "__main__":
     # Running directly, just start ComfyUI.
+    logging.info("ComfyUI version: {}".format(comfyui_version.__version__))
+
     event_loop, _, start_all_func = start_comfyui()
     try:
-        event_loop.run_until_complete(start_all_func())
+        x = start_all_func()
+        app.logger.print_startup_warnings()
+        event_loop.run_until_complete(x)
     except KeyboardInterrupt:
         logging.info("\nStopped server")
 

@@ -7,17 +7,25 @@ import logging
 from typing import Literal
 from collections.abc import Collection
 
-supported_pt_extensions: set[str] = {'.ckpt', '.pt', '.bin', '.pth', '.safetensors', '.pkl', '.sft'}
+from comfy.cli_args import args
+
+supported_pt_extensions: set[str] = {'.ckpt', '.pt', '.pt2', '.bin', '.pth', '.safetensors', '.pkl', '.sft'}
 
 folder_names_and_paths: dict[str, tuple[list[str], set[str]]] = {}
 
-base_path = os.path.dirname(os.path.realpath(__file__))
-models_dir = os.path.join(os.path.dirname(base_path), "models")
+# --base-directory - Resets all default paths configured in folder_paths with a new base path
+if args.base_directory:
+    base_path = os.path.abspath(args.base_directory)
+else:
+    base_path = os.path.dirname(os.path.realpath(__file__))
+
+models_dir = os.path.join(base_path, "models")
+folder_names_and_paths["checkpoints"] = ([os.path.join(models_dir, "checkpoints")], supported_pt_extensions)
+folder_names_and_paths["configs"] = ([os.path.join(models_dir, "configs")], [".yaml"])
 
 def reset_folder_names_and_paths(models_root):
     global models_dir, folder_names_and_paths
     models_dir = models_root
-    #print(f'folder_names_and_paths:{folder_names_and_paths}')
     folder_names_and_paths = {}
     folder_names_and_paths["checkpoints"] = ([os.path.join(models_dir, "checkpoints")], supported_pt_extensions)
     folder_names_and_paths["configs"] = ([os.path.join(models_dir, "configs")], [".yaml"])
@@ -42,14 +50,16 @@ def reset_folder_names_and_paths(models_root):
     folder_names_and_paths["photomaker"] = ([os.path.join(models_dir, "photomaker")], supported_pt_extensions)
 
     folder_names_and_paths["classifiers"] = ([os.path.join(models_dir, "classifiers")], {""})
+    #print(f'folder_names_and_paths:{folder_names_and_paths}')
     return
 
 reset_folder_names_and_paths(models_dir)
 
-output_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "output")
-temp_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "temp")
-input_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "input")
-user_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "user")
+output_directory = os.path.join(base_path, "output")
+temp_directory = os.path.join(base_path, "temp")
+input_directory = os.path.join(base_path, "input")
+user_directory = os.path.join(base_path, "user")
+input_directory_reserved = os.path.join(base_path, "input")
 
 filename_list_cache: dict[str, tuple[list[str], dict[str, float], float]] = {}
 
@@ -125,12 +135,28 @@ def get_input_directory() -> str:
     return input_directory
 
 def get_user_directory() -> str:
+    global user_directory
     return user_directory
 
 def set_user_directory(user_dir: str) -> None:
     global user_directory
     user_directory = user_dir
 
+def get_input_directory_reserved() -> str:
+    global input_directory_reserved
+    return input_directory_reserved
+
+def set_input_directory_reserved(reserved_dir: str) -> None:
+    global input_directory_reserved
+    input_directory_reserved = reserved_dir
+
+def get_input_directory_files() -> list[str]:
+    global input_directory, input_directory_reserved
+    files_input = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f))]
+    #files_reserved = [f for f in os.listdir(input_directory_reserved) if os.path.isfile(os.path.join(input_directory_reserved, f))]
+    #print(f'files_reserved:{files_reserved}')
+    #files_input = list(set(files_input + files_reserved))
+    return files_input
 
 #NOTE: used in http server so don't put folders that should not be accessed remotely
 def get_directory_by_type(type_name: str) -> str | None:
@@ -174,6 +200,9 @@ def annotated_filepath(name: str) -> tuple[str, str | None]:
     elif name.endswith("[input]"):
         base_dir = get_input_directory()
         name = name[:-8]
+        filepath = os.path.join(base_dir, name)
+        if not os.path.exists(filepath):
+            base_dir = get_input_directory_reserved()
     elif name.endswith("[temp]"):
         base_dir = get_temp_directory()
         name = name[:-7]
@@ -191,7 +220,6 @@ def get_annotated_filepath(name: str, default_dir: str | None=None) -> str:
             base_dir = default_dir
         else:
             base_dir = get_input_directory()  # fallback path
-
     return os.path.join(base_dir, name)
 
 
@@ -307,7 +335,6 @@ def get_filename_list_(folder_name: str) -> tuple[list[str], dict[str, float], f
         files, folders_all = recursive_search(x, excluded_dir_names=[".git"])
         output_list.update(filter_files_extensions(files, folders[1]))
         output_folders = {**output_folders, **folders_all}
-
     return sorted(list(output_list)), output_folders, time.perf_counter()
 
 def cached_filename_list_(folder_name: str) -> tuple[list[str], dict[str, float], float] | None:
